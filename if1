@@ -1,0 +1,6 @@
+a = 2;
+if ( a <= 3)
+{ put a;}
+else
+{ put 4;}               
+end
