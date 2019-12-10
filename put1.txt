@@ -1,3 +1,7 @@
 a = 1;
 put a;
+<<<<<<< HEAD
 stop
+=======
+end
+>>>>>>> 3775ea625707ccdaf7184501ac84cd2450abfab8
