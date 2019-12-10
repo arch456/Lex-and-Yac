@@ -4,4 +4,4 @@ c = a*b;
 d = b/a;
 put c;
 put d;
-end
+stop

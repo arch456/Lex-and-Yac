@@ -46,32 +46,36 @@ extern int yydebug;
   enum yytokentype
   {
     INTEGER = 258,
-    ID = 259,
+    var = 259,
     getstmt = 260,
     putstmt = 261,
-    ifstmt = 262,
-    elsestmt = 263,
-    whilestmt = 264,
+    whilestmt = 262,
+    ifstmt = 263,
+    elsestmt = 264,
     notstmt = 265,
-    stopprogram = 266,
-    EQ = 267,
-    LE = 268,
-    UMINUS = 269
+    end_program = 266,
+    emptystmt = 267,
+    EQ = 268,
+    LE = 269,
+    IFX = 270,
+    else = 271
   };
 #endif
 /* Tokens.  */
 #define INTEGER 258
-#define ID 259
+#define var 259
 #define getstmt 260
 #define putstmt 261
-#define ifstmt 262
-#define elsestmt 263
-#define whilestmt 264
+#define whilestmt 262
+#define ifstmt 263
+#define elsestmt 264
 #define notstmt 265
-#define stopprogram 266
-#define EQ 267
-#define LE 268
-#define UMINUS 269
+#define end_program 266
+#define emptystmt 267
+#define EQ 268
+#define LE 269
+#define IFX 270
+#define else 271
 
 /* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
@@ -82,9 +86,9 @@ union YYSTYPE
 
 	int iValue;
 	char id;
-	struct node *nd;
+	struct treeNode *node;
 
-#line 88 "y.tab.h" /* yacc.c:1909  */
+#line 92 "y.tab.h" /* yacc.c:1909  */
 };
 
 typedef union YYSTYPE YYSTYPE;

@@ -3,114 +3,117 @@
 #include <stdarg.h>
 #include <math.h>
 
-int tableSymbols[52];
+int symbol_table[52];
 int value1, x;
-int getValueFromTable(char c); // gets value from the symbol table
-void updateTable(char c, int value); //updates the symbol table
+int get_table(char ch); 
+void update_table(char ch, int val); 
 
 
-int getIdentifierFromTable(char c){
-	int index = -1;
-	if(islower(c)){	
-		index =  c - 'a' + 26;
+int get_ID(char ch){
+	int id = -1;
+	if(islower(ch)){	
+		id =  ch - 'a' + 26;
 	}
-	else if(isupper(c)){
-		index = c - 'A';
+	else if(isupper(ch)){
+		id = ch - 'A';
 	}
-	return index;	
+	return id;	
 };
 
-int getValueFromTable(char c){
-	int index = getIdentifierFromTable(c);
-	return tableSymbols[index];
+// This function is used for getting a value from symbol table
+int get_value(char ch){
+	int id = get_ID(ch);
+	return symbol_table[id];
 };
 
-void updateTable(char c, int value){
-	int index = getIdentifierFromTable(c);
-	tableSymbols[index] = value;
+//This function is used for updating the symbol table with a value
+void update_table(char ch, int val){
+	int id = get_ID(ch);
+	symbol_table[id] = val;
 };
 
 
-enum typeNode{typeId, typeConst, typeOp};
-enum typeOperation{STMT, ASSIGN, GET, PUT, IF, WHILE, MUL, DIV, SUM, SUB,LET,EQT,NOT };
+enum node_type{t_id, n_const, n_op};
+enum node_func{STMT, ASSIGN, GET, PUT, IF, WHILE, MUL, DIV, SUM, SUB,LET,EQT,NOT,UMINUST };
 
-struct nodeId{
+struct n_id{
 	char id;
 };
 
-struct nodeConst{
-	int value;
+struct n_const{
+	int val;
 };
 
-struct nodeStmt{
-	int typeOperation;
-	int numArgs;
-	struct treeNode *op[];
+struct n_stmt{
+	int node_func;
+	int num_arg;
+	struct node *op[];
 };
-struct treeNode{
-	int typeNode;
+struct node{
+	int node_type;
 	union {
-		struct nodeId nodeId;
-		struct nodeConst nodeConst;
-		struct nodeStmt nodeStmt;
+		struct n_id n_id;
+		struct n_const n_const;
+		struct n_stmt n_stmt;
 	};
 };
 
-struct treeNode * buildNodeId(char var){
-	struct treeNode *node;
-	node = (struct treeNode *)malloc(sizeof(struct treeNode));
-	node->typeNode = typeId;
-	node->nodeId.id = var;
-	return node;
+struct node * nid_gen(char c){
+	struct node *nd;
+	nd = (struct node *)malloc(sizeof(struct node));
+	nd->node_type = t_id;
+	nd->n_id.id = c;
+	return nd;
 };
 
-struct treeNode * buildNodeConst(int value){
-	struct treeNode *node;
-	node = (struct treeNode *)malloc(sizeof(struct treeNode));
-	node->typeNode = typeConst;
-	node->nodeConst.value = value;
-	return node;
+struct node * nconst_gen(int val){
+	struct node *nd;
+	nd = (struct node *)malloc(sizeof(struct node));
+	nd->node_type = n_const;
+	nd->n_const.val = val;
+	return nd;
 };
 
-struct treeNode *buildNodeStmt(int op, int numArgs, ...){
+struct node *nstmt_gen(int op, int num_arg, ...){
 	va_list ap;
-	struct treeNode *node = (struct treeNode *)malloc(sizeof(struct treeNode) + (numArgs)*sizeof(struct treeNode *));
-	node->typeNode = typeOp;
-	node->nodeStmt.typeOperation = op;
-	node->nodeStmt.numArgs = numArgs;
-	va_start(ap, numArgs);
-	for(int i =0; i < numArgs; i++){
-		node->nodeStmt.op[i] = va_arg(ap, struct treeNode *);
+	struct node *nd = (struct node *)malloc(sizeof(struct node) + (num_arg)*sizeof(struct node *));
+	nd->node_type = n_op;
+	nd->n_stmt.node_func = op;
+	nd->n_stmt.num_arg = num_arg;
+	va_start(ap, num_arg);
+	for(int i =0; i < num_arg; i++){
+		nd->n_stmt.op[i] = va_arg(ap, struct node *);
 	} 
 	va_end(ap);
-	return node;
+	return nd;
 };
 
 
-int execute(struct treeNode *node){
-	switch(node->typeNode){
-		case typeConst : return node->nodeConst.value;
-	    case typeId    : return getValueFromTable(node->nodeId.id);
-		case typeOp    :{
-			switch (node->nodeStmt.typeOperation) {		
-			    case STMT   : {execute(node->nodeStmt.op[0]); execute(node->nodeStmt.op[1]);return 0;}	    
-			    case ASSIGN : {value1 = execute(node->nodeStmt.op[1]); updateTable(node->nodeStmt.op[0]->nodeId.id, value1);return 0; }
+int walk(struct node *nd){
+	switch(nd->node_type){
+		case n_const : return nd->n_const.val;
+	    case t_id    : return get_value(nd->n_id.id);
+		case n_op    :{
+			switch (nd->n_stmt.node_func) {		
+			    case STMT   : {walk(nd->n_stmt.op[0]); walk(nd->n_stmt.op[1]);return 0;}	    
+			    case ASSIGN : {value1 = walk(nd->n_stmt.op[1]); update_table(nd->n_stmt.op[0]->n_id.id, value1);return 0; }
 			    case WHILE : {
-							   while(execute(node->nodeStmt.op[0])){
-									execute(node->nodeStmt.op[1]); 
-									value1 = execute(node->nodeStmt.op[0]);}
+							   while(walk(nd->n_stmt.op[0])){
+									walk(nd->n_stmt.op[1]); 
+									value1 = walk(nd->n_stmt.op[0]);}
 							return 0;}
-				case IF  : { value1 = execute(node->nodeStmt.op[0]); if(value1){execute(node->nodeStmt.op[1]);}else {if (node->nodeStmt.numArgs > 2) execute(node->nodeStmt.op[2]);} return 0;} 
-                                case GET	: {scanf("%d\n", &value1); updateTable(node->nodeStmt.op[0]->nodeId.id, value1);return 0;}
-				case PUT	:{value1 = execute(node->nodeStmt.op[0]); printf("print %d\n",value1 ); return 0;}
-				case MUL	: return execute(node->nodeStmt.op[0]) * execute(node->nodeStmt.op[1]);
-				case DIV	: return execute(node->nodeStmt.op[0]) / execute(node->nodeStmt.op[1]);
-				case SUM  	: return execute(node->nodeStmt.op[0]) + execute(node->nodeStmt.op[1]);
-				case SUB  	: return execute(node->nodeStmt.op[0]) - execute(node->nodeStmt.op[1]);
-				case LET  	: return execute(node->nodeStmt.op[0]) <= execute(node->nodeStmt.op[1]);
-				case EQT 	: return execute(node->nodeStmt.op[0]) == execute(node->nodeStmt.op[1]);
-				case NOT   : return !execute(node->nodeStmt.op[0]);
-//{  value1 = execute(node->nodeStmt.op[0]); if (value1 == 0) return 1; else return 0;}
+				case IF  : { value1 = walk(nd->n_stmt.op[0]); if(value1){walk(nd->n_stmt.op[1]);}else {if (nd->n_stmt.num_arg > 2) walk(nd->n_stmt.op[2]);} return 0;} 
+                                case GET	: {scanf("%d\n", &value1); update_table(nd->n_stmt.op[0]->n_id.id, value1);return 0;}
+				case PUT	:{value1 = walk(nd->n_stmt.op[0]); printf("%d\n",value1 ); return 0;}
+				case MUL	: return walk(nd->n_stmt.op[0]) * walk(nd->n_stmt.op[1]);
+				case DIV	: return walk(nd->n_stmt.op[0]) / walk(nd->n_stmt.op[1]);
+				case SUM  	: return walk(nd->n_stmt.op[0]) + walk(nd->n_stmt.op[1]);
+				case SUB  	: return walk(nd->n_stmt.op[0]) - walk(nd->n_stmt.op[1]);
+				case LET  	: return walk(nd->n_stmt.op[0]) <= walk(nd->n_stmt.op[1]);
+				case EQT 	: return walk(nd->n_stmt.op[0]) == walk(nd->n_stmt.op[1]);
+				case NOT   : return !walk(nd->n_stmt.op[0]);
+				case UMINUST	: return - walk(nd->n_stmt.op[0]);
+//{  value1 = walk(node->nodeStmt.op[0]); if (value1 == 0) return 1; else return 0;}
 
 			}
  		}

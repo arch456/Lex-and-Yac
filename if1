@@ -3,4 +3,4 @@ if ( a <= 3)
 { put a;}
 else
 { put 4;}               
-end
+stop
